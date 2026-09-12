@@ -22,6 +22,7 @@ import {
   Sparkles,
   ShieldCheck,
   CheckCircle2,
+  ExternalLink,
 } from "lucide-react";
 
 interface ZodarkLiveBrowserProps {
@@ -84,22 +85,44 @@ export function ZodarkLiveBrowser({
     setTimeout(() => setIsLoading(false), 800);
   };
 
-  // Real Google Sign-In inside Zodark
+  // Real Google Sign-In via Popup Window (Bypasses Google iframe anti-phishing blocks)
   const handleGoogleSignIn = () => {
-    setIsLoading(true);
-    const googleLoginUrl = "https://accounts.google.com/ServiceLogin";
-    setCurrentUrl(googleLoginUrl);
-    setInputUrl(googleLoginUrl);
-    setTimeout(() => setIsLoading(false), 800);
+    const popup = window.open(
+      "https://accounts.google.com/ServiceLogin",
+      "GoogleSignInPopup",
+      "width=520,height=650,left=200,top=100,status=no,menubar=no"
+    );
+    if (!popup || popup.closed || typeof popup.closed === "undefined") {
+      setIsLoading(true);
+      const googleLoginUrl = "https://accounts.google.com/ServiceLogin";
+      setCurrentUrl(googleLoginUrl);
+      setInputUrl(googleLoginUrl);
+      setTimeout(() => setIsLoading(false), 800);
+    }
   };
 
-  // Real Google Sign-Out inside Zodark
+  // Real Google Sign-Out via Popup Window
   const handleGoogleSignOut = () => {
-    setIsLoading(true);
-    const googleLogoutUrl = "https://accounts.google.com/Logout";
-    setCurrentUrl(googleLogoutUrl);
-    setInputUrl(googleLogoutUrl);
-    setTimeout(() => setIsLoading(false), 800);
+    const popup = window.open(
+      "https://accounts.google.com/Logout",
+      "GoogleSignOutPopup",
+      "width=520,height=650,left=200,top=100,status=no,menubar=no"
+    );
+    if (!popup || popup.closed || typeof popup.closed === "undefined") {
+      setIsLoading(true);
+      const googleLogoutUrl = "https://accounts.google.com/Logout";
+      setCurrentUrl(googleLogoutUrl);
+      setInputUrl(googleLogoutUrl);
+      setTimeout(() => setIsLoading(false), 800);
+    }
+  // Open active page in Popup Window for 100% login compatibility (Google, Facebook, Instagram, ChatGPT)
+  const handlePopoutWindow = (targetUrl?: string) => {
+    const urlToOpen = targetUrl || currentUrl;
+    window.open(
+      urlToOpen,
+      "ZodarkAuthPopup",
+      "width=560,height=680,left=250,top=100,status=no,menubar=no,toolbar=no"
+    );
   };
 
   // Construct Proxied iframe URL to bypass X-Frame-Options & allow framing
@@ -253,6 +276,26 @@ export function ZodarkLiveBrowser({
                 fontSize: "13px",
               }}
             />
+            <button
+              type="button"
+              onClick={() => handlePopoutWindow()}
+              title="Open current page in popup window for 100% login compatibility"
+              style={{
+                background: "rgba(0, 229, 255, 0.15)",
+                border: "1px solid rgba(0, 229, 255, 0.3)",
+                color: "#00e5ff",
+                borderRadius: "6px",
+                padding: "3px 8px",
+                fontSize: "11px",
+                fontWeight: "600",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "4px",
+              }}
+            >
+              <ExternalLink size={12} /> Popout Login
+            </button>
             <button
               type="submit"
               style={{

@@ -271,7 +271,7 @@ export default function ApexWorld() {
   const [isSocialStudioOpen, setIsSocialStudioOpen] = useState(false);
   const [isHermesStudioOpen, setIsHermesStudioOpen] = useState(false);
   const [isLiveBrowserOpen, setIsLiveBrowserOpen] = useState(false);
-  const [liveBrowserUrl, setLiveBrowserUrl] = useState("https://www.google.com/search?igu=1");
+  const [liveBrowserUrl, setLiveBrowserUrl] = useState("https://www.google.com");
   const [liveBrowserQuery, setLiveBrowserQuery] = useState("");
   const [reduced, setReduced] = useState(false);
 
@@ -386,7 +386,7 @@ export default function ApexWorld() {
       // Integrated Zodark Live Browser Launch Trigger
       if (lower.includes("browser") || lower.includes("youtube") || lower.includes("google") || lower.includes("chatgpt") || lower.includes("instagram") || lower.includes("facebook") || lower.includes("search")) {
         if (lower.includes("youtube")) {
-          setLiveBrowserUrl("https://www.google.com/search?igu=1&q=site:youtube.com+trending");
+          setLiveBrowserUrl("https://www.youtube.com");
           const qMatch = lower.match(/(?:search|play|find|par|pe|sunao)\s+(.+)/i);
           if (qMatch && qMatch[1]) {
             setLiveBrowserQuery(qMatch[1].replace(/youtube|open|kholo|search|par|pe/gi, '').trim());
@@ -409,7 +409,7 @@ export default function ApexWorld() {
           } else {
             setLiveBrowserQuery("");
           }
-          setLiveBrowserUrl("https://www.google.com/search?igu=1");
+          setLiveBrowserUrl("https://www.google.com");
         }
         setIsLiveBrowserOpen(true);
       }

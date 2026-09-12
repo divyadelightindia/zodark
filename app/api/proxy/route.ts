@@ -43,13 +43,14 @@ async function handleProxy(req: Request, method: 'GET' | 'POST') {
     if (contentType.includes('text/html') || contentType.includes('application/xhtml')) {
       let bodyText = await response.text();
 
-      // Remove frame-busting security scripts
+      // Remove frame-busting security scripts & target="_top" attributes
       bodyText = bodyText.replace(/if\s*\(top\s*!==\s*self\)/gi, 'if(false)');
       bodyText = bodyText.replace(/top\.location\s*=/gi, 'window.location=');
+      bodyText = bodyText.replace(/target=["']_top["']/gi, 'target="_self"');
+      bodyText = bodyText.replace(/target=["']_parent["']/gi, 'target="_self"');
 
-      // Inject Base tag & AJAX Interceptor Script to handle Google Sign-In & prevent top-level window redirects
+      // Inject AJAX & Link Click Interceptor Script
       const interceptorScript = `
-        <base href="${origin}/" />
         <script>
           (function() {
             try {
@@ -61,7 +62,7 @@ async function handleProxy(req: Request, method: 'GET' | 'POST') {
             const origFetch = window.fetch;
             window.fetch = function(input, init) {
               let urlStr = typeof input === 'string' ? input : (input && input.url ? input.url : '');
-              if (urlStr.startsWith('/')) {
+              if (urlStr.startsWith('/') && !urlStr.startsWith('//')) {
                 urlStr = origin + urlStr;
               }
               if (urlStr.startsWith('http') && !urlStr.includes('/api/proxy?url=')) {
@@ -74,7 +75,7 @@ async function handleProxy(req: Request, method: 'GET' | 'POST') {
             const origOpen = XMLHttpRequest.prototype.open;
             XMLHttpRequest.prototype.open = function(method, url, ...rest) {
               let urlStr = typeof url === 'string' ? url : '';
-              if (urlStr.startsWith('/')) {
+              if (urlStr.startsWith('/') && !urlStr.startsWith('//')) {
                 urlStr = origin + urlStr;
               }
               if (urlStr.startsWith('http') && !urlStr.includes('/api/proxy?url=')) {
@@ -82,6 +83,22 @@ async function handleProxy(req: Request, method: 'GET' | 'POST') {
               }
               return origOpen.call(this, method, urlStr, ...rest);
             };
+
+            // Intercept link clicks to prevent top window hijack and open Google auth in popup
+            document.addEventListener('click', function(e) {
+              const anchor = e.target && e.target.closest ? e.target.closest('a') : null;
+              if (anchor) {
+                if (anchor.target === '_top' || anchor.target === '_parent') {
+                  anchor.target = '_self';
+                }
+                const href = anchor.href || '';
+                if (href.includes('accounts.google.com') || href.includes('/ServiceLogin')) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  window.open(href, 'GoogleAuthPopup', 'width=540,height=660,left=200,top=100,status=no,menubar=no');
+                }
+              }
+            }, true);
           })();
         </script>
       `;

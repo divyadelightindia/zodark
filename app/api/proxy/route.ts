@@ -47,11 +47,16 @@ async function handleProxy(req: Request, method: 'GET' | 'POST') {
       bodyText = bodyText.replace(/if\s*\(top\s*!==\s*self\)/gi, 'if(false)');
       bodyText = bodyText.replace(/top\.location\s*=/gi, 'window.location=');
 
-      // Inject Base tag & AJAX Interceptor Script to handle Google Sign-In Next button fetch/XHR
+      // Inject Base tag & AJAX Interceptor Script to handle Google Sign-In & prevent top-level window redirects
       const interceptorScript = `
         <base href="${origin}/" />
         <script>
           (function() {
+            try {
+              Object.defineProperty(window, 'top', { get: function() { return window.self; } });
+              Object.defineProperty(window, 'parent', { get: function() { return window.self; } });
+            } catch(e) {}
+
             const origin = "${origin}";
             const origFetch = window.fetch;
             window.fetch = function(input, init) {

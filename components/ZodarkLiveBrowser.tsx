@@ -634,6 +634,7 @@ export function ZodarkLiveBrowser({
           <iframe
             src={proxiedIframeSrc}
             title="Zodark Live Embedded Browser"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals allow-downloads"
             style={{
               width: "100%",
               height: "100%",

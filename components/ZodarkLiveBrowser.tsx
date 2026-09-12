@@ -540,6 +540,59 @@ export function ZodarkLiveBrowser({
             overflow: "hidden",
           }}
         >
+          {/* Smart Login Helper Overlay for Google/Social sites */}
+          {(currentUrl.includes("accounts.google.com") ||
+            currentUrl.includes("facebook.com") ||
+            currentUrl.includes("instagram.com") ||
+            currentUrl.includes("linkedin.com") ||
+            currentUrl.includes("chatgpt.com")) && (
+            <div
+              style={{
+                position: "absolute",
+                top: "16px",
+                left: "50%",
+                transform: "translateX(-50%)",
+                zIndex: 25,
+                background:
+                  "linear-gradient(135deg, rgba(0, 229, 255, 0.98) 0%, rgba(0, 160, 255, 0.98) 100%)",
+                color: "#040810",
+                padding: "12px 22px",
+                borderRadius: "14px",
+                boxShadow:
+                  "0 10px 35px rgba(0, 229, 255, 0.5), 0 0 2px rgba(255,255,255,0.9)",
+                display: "flex",
+                alignItems: "center",
+                gap: "14px",
+                backdropFilter: "blur(12px)",
+                border: "1px solid #ffffff",
+              }}
+            >
+              <ShieldCheck size={22} color="#040810" />
+              <span style={{ fontSize: "12px", fontWeight: "800" }}>
+                SECURITY NOTICE: Click below to complete 1-Click Official Login cleanly in a popup window!
+              </span>
+              <button
+                onClick={() => handlePopoutWindow(currentUrl)}
+                style={{
+                  background: "#040810",
+                  color: "#00e5ff",
+                  border: "none",
+                  padding: "8px 16px",
+                  borderRadius: "8px",
+                  fontSize: "12px",
+                  fontWeight: "800",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+                }}
+              >
+                <ExternalLink size={14} /> Open Official Login Window 🚀
+              </button>
+            </div>
+          )}
+
           {isLoading && (
             <div
               style={{

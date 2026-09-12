@@ -1,12 +1,29 @@
 'use client';
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import ApexWorld from "@/components/ApexWorld";
 import ApexOverviewPanel from "@/components/ApexOverviewPanel";
 import { ZodarkControlHub } from "@/components/ZodarkControlHub";
+import { ZodarkAuthModal } from "@/components/ZodarkAuthModal";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function Home() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    if (!supabase) return;
+    supabase.auth.getUser().then(({ data }) => {
+      if (data?.user) setUser(data.user);
+    });
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => {
+      authListener?.subscription.unsubscribe();
+    };
+  }, []);
 
   return (
     <main
@@ -16,13 +33,12 @@ export default function Home() {
       {/* Top-left overview HUD: clock + weather + social links */}
       <ApexOverviewPanel />
 
-      {/* The world: orb core + orbiting agent graph. Tap the orb to cycle its
-          state; click any agent node to open its overview card. */}
+      {/* The world: orb core + orbiting agent graph */}
       <section style={{ position: "relative", height: "100vh", minHeight: 620 }}>
         <ApexWorld />
       </section>
 
-      {/* Top-Right Header Actions: Settings Button (⚙️) + Zodark Badge */}
+      {/* Top-Right Header Actions */}
       <div
         style={{
           position: "absolute",
@@ -34,6 +50,31 @@ export default function Home() {
           gap: 10,
         }}
       >
+        {/* Sign In / User Profile Button */}
+        <button
+          onClick={() => setIsAuthOpen(true)}
+          style={{
+            fontFamily: "var(--font-mono)",
+            fontSize: "0.7rem",
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            color: user ? "#34d399" : "#00e5ff",
+            border: `1px solid ${user ? "rgba(52,211,153,0.4)" : "rgba(0,229,255,0.4)"}`,
+            borderRadius: 20,
+            padding: "6px 14px",
+            background: user ? "rgba(52,211,153,0.12)" : "rgba(0,229,255,0.12)",
+            backdropFilter: "blur(10px)",
+            boxShadow: `0 0 18px ${user ? "rgba(52,211,153,0.2)" : "rgba(0,229,255,0.25)"}`,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            fontWeight: "700",
+          }}
+        >
+          <span>{user ? "👤" : "🔑"}</span> {user ? (user.email ? user.email.split("@")[0] : "ACCOUNT") : "SIGN IN"}
+        </button>
+
         {/* Settings Control Hub Trigger Button */}
         <button
           onClick={() => setIsSettingsOpen(true)}
@@ -54,17 +95,6 @@ export default function Home() {
             display: "flex",
             alignItems: "center",
             gap: 6,
-            transition: "all 0.2s ease",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "rgba(0,229,255,0.15)";
-            e.currentTarget.style.borderColor = "rgba(0,229,255,0.6)";
-            e.currentTarget.style.transform = "scale(1.04)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "rgba(4,8,15,0.7)";
-            e.currentTarget.style.borderColor = "rgba(0,229,255,0.3)";
-            e.currentTarget.style.transform = "scale(1)";
           }}
         >
           <span>⚙️</span> SETTINGS
@@ -89,6 +119,12 @@ export default function Home() {
           ◆ Zodark
         </div>
       </div>
+
+      {/* Zodark Authentication Modal */}
+      <ZodarkAuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
+      />
 
       {/* Control Hub Modal Overlay */}
       <ZodarkControlHub

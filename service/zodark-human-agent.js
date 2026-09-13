@@ -42,16 +42,36 @@ async function runHumanAgent() {
   }
 
   try {
-    // Launch Playwright Chromium in Headed Mode (Visible GUI) side-by-side
-    const browser = await chromium.launch({
-      headless: false,
-      args: [
-        '--window-position=950,50',
-        '--window-size=950,980',
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-      ]
-    });
+    // Launch Playwright with system installed Chrome on Windows
+    let browser;
+    try {
+      browser = await chromium.launch({
+        channel: 'chrome',
+        headless: false,
+        args: [
+          '--window-position=950,50',
+          '--window-size=950,980',
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+        ]
+      });
+    } catch (launchErr) {
+      console.warn("[ZODARK HUMAN AGENT] Playwright Chrome channel failed, attempting default launch...", launchErr.message);
+      try {
+        browser = await chromium.launch({
+          headless: false,
+          args: [
+            '--window-position=950,50',
+            '--window-size=950,980',
+          ]
+        });
+      } catch (e) {
+        console.log("[ZODARK HUMAN AGENT] Launching System Chrome Window Fallback...");
+        const { exec } = require('child_process');
+        exec(`start chrome --new-window --window-position=950,50 --window-size=950,980 "${targetUrl}"`);
+        return;
+      }
+    }
 
     const context = await browser.newContext({
       viewport: { width: 930, height: 900 },

@@ -1,44 +1,48 @@
 const path = require('path');
 const fs = require('fs');
 
-// Try importing playwright from local node_modules or service directory
+// Try importing playwright from local node_modules
 let chromium;
 try {
-  const playwrightPath = path.join(__dirname, 'youtube-automation-agent-master', 'node_modules', 'playwright');
-  if (fs.existsSync(playwrightPath)) {
-    chromium = require(playwrightPath).chromium;
-  } else {
-    chromium = require('playwright').chromium;
-  }
+  chromium = require('playwright').chromium;
 } catch (e) {
   try {
-    chromium = require('playwright').chromium;
+    const playwrightPath = path.join(__dirname, 'youtube-automation-agent-master', 'node_modules', 'playwright');
+    if (fs.existsSync(playwrightPath)) {
+      chromium = require(playwrightPath).chromium;
+    }
   } catch (err) {
-    console.error("Playwright module load notice:", err.message);
+    console.error("[Zodark Human Agent] Playwright load notice:", err.message);
   }
 }
 
 async function runHumanAgent() {
   const args = process.argv.slice(2);
   const actionArg = args.find(a => a.startsWith('--action='));
+  const platformArg = args.find(a => a.startsWith('--platform='));
   const urlArg = args.find(a => a.startsWith('--url='));
   const queryArg = args.find(a => a.startsWith('--query='));
 
   const action = actionArg ? actionArg.split('=')[1] : 'open_url';
-  const targetUrl = urlArg ? urlArg.split('=')[1] : 'https://youtube.com';
+  const platform = platformArg ? platformArg.split('=')[1] : 'instagram';
+  let targetUrl = urlArg ? urlArg.split('=')[1] : 'https://www.instagram.com';
   const query = queryArg ? decodeURIComponent(queryArg.split('=')[1]) : '';
 
-  console.log(`[ZODARK HUMAN AGENT] Action: ${action}, URL: ${targetUrl}, Query: "${query}"`);
+  if (action === 'post_instagram') targetUrl = 'https://www.instagram.com';
+  if (action === 'post_facebook') targetUrl = 'https://www.facebook.com';
+  if (action === 'post_youtube') targetUrl = 'https://studio.youtube.com';
+
+  console.log(`[ZODARK HUMAN OPERATOR AGENT] Executing action=${action}, platform=${platform}, URL=${targetUrl}, query="${query}"`);
 
   if (!chromium) {
-    console.log("[ZODARK HUMAN AGENT] Fallback: Launching system Chrome window side-by-side...");
+    console.log("[ZODARK HUMAN AGENT] Launching System Chrome Window for User Verification...");
     const { exec } = require('child_process');
-    exec(`start chrome --new-window --window-position=960,0 --window-size=960,1050 "${targetUrl}"`);
+    exec(`start chrome --new-window --window-position=950,50 --window-size=950,980 "${targetUrl}"`);
     return;
   }
 
   try {
-    // Launch Playwright Chromium in Headed Mode (Visible GUI) side-by-side (right half of screen)
+    // Launch Playwright Chromium in Headed Mode (Visible GUI) side-by-side
     const browser = await chromium.launch({
       headless: false,
       args: [
@@ -46,7 +50,6 @@ async function runHumanAgent() {
         '--window-size=950,980',
         '--no-sandbox',
         '--disable-setuid-sandbox',
-        '--start-maximized=false'
       ]
     });
 
@@ -59,29 +62,43 @@ async function runHumanAgent() {
     console.log(`[ZODARK HUMAN AGENT] Navigating to ${targetUrl}...`);
     await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
-    // Action 1: YouTube Search
-    if (action === 'search_youtube' || (targetUrl.includes('youtube.com') && query)) {
+    // Action 1: Instagram Human Automation
+    if (action === 'post_instagram' || targetUrl.includes('instagram.com')) {
+      console.log(`[ZODARK HUMAN AGENT] Instagram Operator Active. Typing caption...`);
+      await page.waitForTimeout(3000);
+
+      // Check if user is logged in or needs login
+      const createBtn = page.locator('svg[aria-label="New post"], svg[aria-label="Naya post"]').first();
+      if (await createBtn.isVisible({ timeout: 4000 }).catch(() => false)) {
+        console.log(`[ZODARK HUMAN AGENT] Clicking Create New Post...`);
+        await createBtn.click();
+      }
+    } 
+    // Action 2: Facebook Human Automation
+    else if (action === 'post_facebook' || targetUrl.includes('facebook.com')) {
+      console.log(`[ZODARK HUMAN AGENT] Facebook Operator Active. Typing content...`);
+      await page.waitForTimeout(3000);
+      const postBox = page.locator('div[role="button"]:has-text("What\'s on your mind?"), div[role="button"]:has-text("Aapke mann mein kya hai?")').first();
+      if (await postBox.isVisible({ timeout: 5000 }).catch(() => false)) {
+        await postBox.click();
+        await page.waitForTimeout(1000);
+        if (query) {
+          const inputArea = page.locator('div[role="textbox"]').first();
+          await inputArea.pressSequentially(query, { delay: 75 });
+        }
+      }
+    }
+    // Action 3: YouTube Search & Automation
+    else if (action === 'search_youtube' || (targetUrl.includes('youtube.com') && query)) {
       console.log(`[ZODARK HUMAN AGENT] Searching YouTube for: "${query}"`);
       const searchBox = page.locator('input[name="search_query"], input#search').first();
       await searchBox.waitFor({ state: 'visible', timeout: 10000 });
       await searchBox.click();
-      
-      // Type char-by-char like a human (80ms delay per key)
       await searchBox.pressSequentially(query, { delay: 85 });
       await page.waitForTimeout(500);
       await searchBox.press('Enter');
-
-      console.log(`[ZODARK HUMAN AGENT] Search submitted. Waiting for results...`);
-      await page.waitForTimeout(3000);
-
-      // Click top video result if available
-      const topVideo = page.locator('ytd-video-renderer a#video-title').first();
-      if (await topVideo.isVisible({ timeout: 5000 }).catch(() => false)) {
-        console.log(`[ZODARK HUMAN AGENT] Clicking top video result...`);
-        await topVideo.click();
-      }
-    } 
-    // Action 2: Google Search
+    }
+    // Action 4: Google Search
     else if (action === 'search_google' || (targetUrl.includes('google.com') && query)) {
       console.log(`[ZODARK HUMAN AGENT] Searching Google for: "${query}"`);
       const searchBox = page.locator('textarea[name="q"], input[name="q"]').first();
@@ -91,7 +108,7 @@ async function runHumanAgent() {
       await page.waitForTimeout(400);
       await searchBox.press('Enter');
     }
-    // Action 3: ChatGPT Prompt Input
+    // Action 5: ChatGPT Prompt Input
     else if (action === 'chatgpt_prompt' || (targetUrl.includes('chatgpt.com') && query)) {
       console.log(`[ZODARK HUMAN AGENT] Typing prompt into ChatGPT...`);
       const promptArea = page.locator('#prompt-textarea, textarea').first();
@@ -102,11 +119,9 @@ async function runHumanAgent() {
       await promptArea.press('Enter');
     }
 
-    console.log(`[ZODARK HUMAN AGENT] Session active on screen. Browser window open.`);
-    // Keep browser open for user interaction
+    console.log(`[ZODARK HUMAN AGENT] Task executed. Browser window active on PC.`);
   } catch (err) {
     console.error("[ZODARK HUMAN AGENT] Error:", err.message);
-    // Fallback: system browser
     const { exec } = require('child_process');
     exec(`start chrome --new-window --window-position=950,50 --window-size=950,980 "${targetUrl}"`);
   }

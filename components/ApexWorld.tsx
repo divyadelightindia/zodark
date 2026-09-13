@@ -440,6 +440,14 @@ export default function ApexWorld() {
       const data = await res.json();
       const reply = data.reply || "I am connected and ready. Please ask your question.";
 
+      if (data.openUrl && typeof window !== "undefined") {
+        try {
+          window.open(data.openUrl, "_blank");
+        } catch (e) {
+          console.warn("Client window.open notice:", e);
+        }
+      }
+
       setChatHistory((prev) => [...prev, { role: "model", text: reply }]);
       setLastReply(reply);
       setPausedReply(reply);

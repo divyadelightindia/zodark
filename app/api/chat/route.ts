@@ -1,16 +1,18 @@
 import { NextResponse } from 'next/server';
 import os from 'os';
+import { exec } from 'child_process';
 
 export const dynamic = 'force-dynamic';
 
 const SYSTEM_INSTRUCTION = `You are Zodark, an advanced executive AI assistant and human operator agent.
 
 OPERATOR DIRECTIVE:
-1. YOU ARE CONNECTED TO THE USER'S LOCAL PC CHROME BROWSER VIA THE HUMAN OPERATOR AGENT ENGINE.
-2. WHEN THE USER ASKS TO OPEN YOUTUBE, GOOGLE, CHATGPT, INSTAGRAM, FACEBOOK, LINKEDIN, OR SEARCH THE WEB, CONFIRM WARMLY THAT YOU ARE LAUNCHING IT ON THEIR PC CHROME BROWSER.
-3. CONVERSATIONAL VOICE DIALOGUE: You are designed for continuous 2-way voice conversation. Speak naturally, warmly, and politely in clear Hinglish. Address the user respectfully as "Sir" or "Bhai".
-4. TONE & BEHAVIOR: Professional, helpful, confident, and human-like.
-5. CONCISENESS: Keep answers short, direct, and conversational (2 to 3 sentences max).`;
+1. YOU ARE DIRECTLY CONNECTED TO THE USER'S LOCAL PC CHROME BROWSER.
+2. WHEN THE USER ASKS TO OPEN YOUTUBE, GOOGLE, CHATGPT, INSTAGRAM, FACEBOOK, LINKEDIN, OR SEARCH THE WEB, CONFIRM WARMLY IN HINGLISH THAT YOU HAVE LAUNCHED IT AS A NEW TAB IN THEIR ACTIVE CHROME BROWSER WINDOW (RIGHT NEXT TO LOCALHOST:3000).
+3. EXPLAIN THAT THEIR SAVED LOGINS AND SESSIONS ARE FULLY ACTIVE IN THIS NEW TAB. NEVER MENTION EMBEDDED MODALS OR INCOGNITO.
+4. CONVERSATIONAL VOICE DIALOGUE: You are designed for continuous 2-way voice conversation. Speak naturally, warmly, and politely in clear Hinglish. Address the user respectfully as "Sir" or "Bhai".
+5. TONE & BEHAVIOR: Professional, helpful, confident, and human-like.
+6. CONCISENESS: Keep answers short, direct, and conversational (2 to 3 sentences max).`;
 
 const FAST_MODELS = [
   'gemini-3.5-flash-lite',
@@ -24,62 +26,68 @@ const FAST_MODELS = [
 /**
  * Handles Zodark Human Operator PC Browser Automation
  */
-function handleInternalBrowserAutomation(msg: string): { executed: boolean; description: string } {
+function handleInternalBrowserAutomation(msg: string): { executed: boolean; description: string; openUrl?: string } {
   const lower = msg.toLowerCase();
+
+  let openUrl = '';
+  let description = '';
 
   if (lower.includes('youtube')) {
     let query = '';
-    const searchMatch = lower.match(/(?:search|play|find|par|pe|sunao)\s+(.+)/i);
+    const searchMatch = lower.match(/(?:search|play|find|par|pe|sunao|chalao)\s+(.+)/i);
     if (searchMatch && searchMatch[1]) {
-      query = searchMatch[1].replace(/youtube|open|kholo|search|par|pe|karo/gi, '').trim();
+      query = searchMatch[1].replace(/youtube|open|kholo|search|par|pe|karo|chalao|play/gi, '').trim();
     }
-    return {
-      executed: true,
-      description: query
-        ? `Launched YouTube on PC Chrome browser with search query "${query}".`
-        : 'Launched YouTube on PC Chrome browser.'
-    };
+    if (query) {
+      openUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+      description = `Searched "${query}" on YouTube in active Chrome browser.`;
+    } else {
+      openUrl = `https://www.youtube.com`;
+      description = `Opened YouTube in active Chrome browser.`;
+    }
+  } else if (lower.includes('google')) {
+    let query = '';
+    const searchMatch = lower.match(/(?:search|find|par|pe|do|poochho)\s+(.+)/i);
+    if (searchMatch && searchMatch[1]) {
+      query = searchMatch[1].replace(/google|open|kholo|search|par|pe|karo/gi, '').trim();
+    }
+    if (query) {
+      openUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+      description = `Searched "${query}" on Google in active Chrome browser.`;
+    } else {
+      openUrl = `https://www.google.com`;
+      description = `Opened Google in active Chrome browser.`;
+    }
+  } else if (lower.includes('chatgpt')) {
+    openUrl = `https://chatgpt.com`;
+    description = `Opened ChatGPT in active Chrome browser.`;
+  } else if (lower.includes('instagram')) {
+    openUrl = `https://www.instagram.com`;
+    description = `Opened Instagram in active Chrome browser.`;
+  } else if (lower.includes('facebook')) {
+    openUrl = `https://www.facebook.com`;
+    description = `Opened Facebook in active Chrome browser.`;
+  } else if (lower.includes('linkedin')) {
+    openUrl = `https://www.linkedin.com`;
+    description = `Opened LinkedIn in active Chrome browser.`;
+  } else if (lower.includes('browser') || lower.includes('kholo') || lower.includes('launch') || lower.includes('open')) {
+    openUrl = `https://www.google.com`;
+    description = `Opened Chrome Browser tab.`;
   }
 
-  if (lower.includes('google')) {
-    return {
-      executed: true,
-      description: 'Launched Google Search on PC Chrome browser.'
-    };
-  }
+  if (openUrl) {
+    try {
+      exec(`start chrome "${openUrl}"`, (err) => {
+        if (err) console.warn("[Zodark Browser Exec Notice]:", err.message);
+      });
+    } catch (e) {
+      console.warn("[Zodark Browser Exec Exception]:", e);
+    }
 
-  if (lower.includes('chatgpt')) {
     return {
       executed: true,
-      description: 'Launched ChatGPT on PC Chrome browser.'
-    };
-  }
-
-  if (lower.includes('instagram')) {
-    return {
-      executed: true,
-      description: 'Launched Instagram on PC Chrome browser.'
-    };
-  }
-
-  if (lower.includes('facebook')) {
-    return {
-      executed: true,
-      description: 'Launched Facebook on PC Chrome browser.'
-    };
-  }
-
-  if (lower.includes('linkedin')) {
-    return {
-      executed: true,
-      description: 'Launched LinkedIn on PC Chrome browser.'
-    };
-  }
-
-  if (lower.includes('browser') || lower.includes('search') || lower.includes('kholo')) {
-    return {
-      executed: true,
-      description: 'Launched PC Chrome Browser.'
+      description,
+      openUrl
     };
   }
 
@@ -124,11 +132,11 @@ export async function POST(req: Request) {
 
     const totalMemGB = (os.totalmem() / (1024 * 1024 * 1024)).toFixed(1);
     const freeMemGB = (os.freemem() / (1024 * 1024 * 1024)).toFixed(1);
-    const systemContext = `\nREAL-TIME ZODARK EMBEDDED BROWSER AUTOMATION STATUS:
+    const systemContext = `\nREAL-TIME ZODARK PC BROWSER OPERATOR STATUS:
 - OS Platform: Windows (${os.release()}, ${os.arch()})
 - Host Name: ${os.hostname()}
 - Memory: Total ${totalMemGB} GB, Free ${freeMemGB} GB
-${actionResult.executed ? `- INTEGRATED ZODARK LIVE BROWSER ACTIVE: ${actionResult.description}` : ''}`;
+${actionResult.executed ? `- PC CHROME NEW TAB LAUNCHED: ${actionResult.description} (URL: ${actionResult.openUrl})` : ''}`;
 
     let dynamicInstruction = SYSTEM_INSTRUCTION + systemContext;
     if (businessProfile && businessProfile.businessName) {
@@ -152,7 +160,7 @@ ${actionResult.executed ? `- INTEGRATED ZODARK LIVE BROWSER ACTIVE: ${actionResu
 
     let finalPromptText = message.trim();
     if (actionResult.executed) {
-      finalPromptText += `\n\n[ZODARK BROWSER ENGINE NOTE]: The action "${actionResult.description}" HAS BEEN OPENED DIRECTLY INSIDE ZODARK'S EMBEDDED LIVE BROWSER MODAL ON THE SCREEN! Confirm to the user that everything is active inside Zodark without opening external popups!`;
+      finalPromptText += `\n\n[ZODARK OPERATOR ENGINE NOTE]: The target URL "${actionResult.openUrl}" HAS BEEN LAUNCHED DIRECTLY AS A NEW TAB IN THE USER'S PRIMARY ACTIVE CHROME BROWSER WINDOW (right next to localhost:3000)! Confirm to the user in polite Hinglish that you have opened ${actionResult.openUrl} in a new tab in their active Chrome browser with all their logged-in accounts ready!`;
     }
 
     contents.push({
@@ -203,7 +211,7 @@ ${actionResult.executed ? `- INTEGRATED ZODARK LIVE BROWSER ACTIVE: ${actionResu
       );
     }
 
-    return NextResponse.json({ reply: replyText.trim() });
+    return NextResponse.json({ reply: replyText.trim(), openUrl: actionResult.openUrl || null });
 
   } catch (error) {
     console.error("Chat API Route Error:", error);
@@ -213,3 +221,4 @@ ${actionResult.executed ? `- INTEGRATED ZODARK LIVE BROWSER ACTIVE: ${actionResu
     );
   }
 }
+

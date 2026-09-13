@@ -39,8 +39,8 @@ export async function POST(req: Request) {
         else console.log("[Browser Automate Bridge Success]:", stdout);
       });
     } else {
-      // Fallback: Launch side-by-side Chrome browser window (right half of screen)
-      const chromeCmd = `start chrome --new-window --window-position=950,50 --window-size=950,980 "${targetUrl}"`;
+      // Fallback: Launch tab in existing Chrome browser window (maintaining user active sessions)
+      const chromeCmd = `start chrome "${targetUrl}"`;
       exec(chromeCmd);
     }
 

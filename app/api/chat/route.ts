@@ -15,6 +15,8 @@ OPERATOR & VISION DIRECTIVES:
 5. TONE & VOICE DIALOGUE: Speak naturally, warmly, and politely in clear Hinglish. Address the user respectfully as "Sir" or "Bhai".
 6. CONCISENESS: Keep answers short, direct, and conversational (2 to 3 sentences max).`;
 
+import zodarkDictionary from '@/lib/zodark_dictionary.json';
+
 const FAST_MODELS = [
   'gemini-3.6-flash',
   'gemini-3.8-flash',
@@ -42,11 +44,13 @@ function normalizeText(text: string): string {
 }
 
 /**
- * Helper to clean search query from filler words
+ * Helper to clean search query from filler words using zodark_dictionary.json
  */
 function cleanQuery(str: string): string {
+  const fillers = zodarkDictionary.fillerWords || [];
+  const pattern = new RegExp(`\\b(${fillers.join('|')})\\b`, 'gi');
   return str
-    .replace(/by|open|kholo|search|par|pe|karo|chalao|play|website|site|wali|kijiye|karein|do|bhai|sir|aap|thoda|wale|waali|maine|bola|karne|ka|ine|in/gi, ' ')
+    .replace(pattern, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }

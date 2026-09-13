@@ -1,0 +1,28 @@
+{
+  "brands": {
+    "amazon": "https://www.amazon.in",
+    "flipkart": "https://www.flipkart.com",
+    "booking": "https://www.booking.com",
+    "makemytrip": "https://www.makemytrip.com",
+    "youtube": "https://www.youtube.com",
+    "google": "https://www.google.com",
+    "chatgpt": "https://chatgpt.com",
+    "instagram": "https://www.instagram.com",
+    "facebook": "https://www.facebook.com",
+    "linkedin": "https://www.linkedin.com",
+    "jordar": "https://jordar.in",
+    "khuddar": "https://khuddar.in"
+  },
+  "actionSynonyms": {
+    "open": ["open", "kholo", "chalu", "launch", "chalao", "dekho", "start", "ओपन", "खोलो", "खोल", "चालू", "लॉन्च"],
+    "search": ["search", "dhundo", "khojo", "find", "look", "सर्च", "ढूंढो", "खोजो", "ढूंढ"],
+    "type": ["type", "likho", "write", "enter", "टाइप", "लिखो", "लिखे", "लिख"],
+    "play": ["play", "chalao", "sunao", "video", "song", "चलाओ", "प्ले", "सुनाओ"],
+    "pause": ["pause", "roko", "stop", "chup", "रोको", "पॉज"]
+  },
+  "fillerWords": [
+    "by", "open", "kholo", "search", "par", "pe", "karo", "chalao", "play", 
+    "website", "site", "wali", "kijiye", "karein", "do", "bhai", "sir", "aap", 
+    "thoda", "wale", "waali", "maine", "bola", "karne", "ka", "ine", "in", "dekhiey", "dikhao"
+  ]
+}

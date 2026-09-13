@@ -34,10 +34,16 @@ async function runHumanAgent() {
 
   console.log(`[ZODARK HUMAN OPERATOR AGENT] Executing action=${action}, platform=${platform}, URL=${targetUrl}, query="${query}"`);
 
-  if (!chromium) {
-    console.log("[ZODARK HUMAN AGENT] Launching System Chrome Window for User Verification...");
+  if (action === 'open_url' || action === 'search_google' || action === 'search_youtube' || action === 'open_browser') {
+    console.log(`[ZODARK HUMAN AGENT] Opening new tab in user's active Chrome browser: ${targetUrl}`);
     const { exec } = require('child_process');
-    exec(`start chrome --new-window --window-position=950,50 --window-size=950,980 "${targetUrl}"`);
+    let finalUrl = targetUrl;
+    if (query && (action === 'search_google' || targetUrl.includes('google.com'))) {
+      finalUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+    } else if (query && (action === 'search_youtube' || targetUrl.includes('youtube.com'))) {
+      finalUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+    }
+    exec(`start chrome "${finalUrl}"`);
     return;
   }
 

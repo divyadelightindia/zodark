@@ -32,8 +32,8 @@ export function typeTextOS(text: string): boolean {
   if (!text) return false;
   try {
     const escapedText = text.replace(/[{}^%~()]/g, '{$&}').replace(/"/g, '""');
-    const psCmd = `Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait("${escapedText}")`;
-    execSync(`powershell -Command "${psCmd}"`, { timeout: 5000 });
+    const psCmd = `$wshell = New-Object -ComObject WScript.Shell; $wshell.AppActivate('Chrome'); Start-Sleep -Milliseconds 200; Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.SendKeys]::SendWait("${escapedText}")`;
+    execSync(`powershell -ExecutionPolicy Bypass -Command "${psCmd}"`, { timeout: 5000 });
     return true;
   } catch (e) {
     console.warn("[ZODARK OS OPERATOR] SendKeys notice:", (e as Error).message);

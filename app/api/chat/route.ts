@@ -16,10 +16,10 @@ OPERATOR & VISION DIRECTIVES:
 6. CONCISENESS: Keep answers short, direct, and conversational (2 to 3 sentences max).`;
 
 const FAST_MODELS = [
-  'gemini-2.0-flash',
-  'gemini-1.5-flash',
-  'gemini-3.5-flash',
-  'gemini-flash-latest'
+  'gemini-3.6-flash',
+  'gemini-3.8-flash',
+  'gemini-3.5-flash-lite',
+  'gemini-3.1-flash-lite'
 ];
 
 /**
@@ -46,7 +46,8 @@ function normalizeText(text: string): string {
  */
 function cleanQuery(str: string): string {
   return str
-    .replace(/by|open|kholo|search|par|pe|karo|chalao|play|website|site|wali|kijiye|karein|do|bhai|sir|aap|thoda|wale|waali/gi, '')
+    .replace(/by|open|kholo|search|par|pe|karo|chalao|play|website|site|wali|kijiye|karein|do|bhai|sir|aap|thoda|wale|waali|maine|bola|karne|ka|ine|in/gi, ' ')
+    .replace(/\s+/g, ' ')
     .trim();
 }
 
@@ -54,7 +55,7 @@ function cleanQuery(str: string): string {
  * Extracts custom domain/website URL or search query from user message
  */
 function extractDomainOrQuery(msg: string): { url: string | null; description: string } {
-  const lower = msg.toLowerCase();
+  const lower = normalizeText(msg);
 
   // 1. Check for explicit URL or domain name (e.g. jordar.in, google.com, mywebsite.co.in)
   const urlRegex = /(?:https?:\/\/)?([a-zA-Z0-9-]+\.(?:com|in|org|net|co|io|ai|app|gov|edu|dev|me|tech|site|online|xyz)(?:\/[^\s]*)?)/i;
@@ -74,35 +75,42 @@ function extractDomainOrQuery(msg: string): { url: string | null; description: s
     if (q && q.length > 2) {
       return { url: `https://www.amazon.in/s?k=${encodeURIComponent(q)}`, description: `Searched "${q}" on Amazon.` };
     }
-    return { url: 'https://www.amazon.in', description: 'Opened Amazon.' };
+    return { url: 'https://www.amazon.in', description: 'Opened Amazon in active Chrome browser.' };
   }
   if (lower.includes('flipkart')) {
     const q = cleanQuery(lower.replace(/flipkart/i, ''));
     if (q && q.length > 2) {
       return { url: `https://www.flipkart.com/search?q=${encodeURIComponent(q)}`, description: `Searched "${q}" on Flipkart.` };
     }
-    return { url: 'https://www.flipkart.com', description: 'Opened Flipkart.' };
+    return { url: 'https://www.flipkart.com', description: 'Opened Flipkart in active Chrome browser.' };
   }
   if (lower.includes('booking')) {
-    return { url: 'https://www.booking.com', description: 'Opened Booking.com.' };
+    return { url: 'https://www.booking.com', description: 'Opened Booking.com in active Chrome browser.' };
   }
   if (lower.includes('makemytrip') || lower.includes('make my trip')) {
-    return { url: 'https://www.makemytrip.com', description: 'Opened MakeMyTrip.' };
+    return { url: 'https://www.makemytrip.com', description: 'Opened MakeMyTrip in active Chrome browser.' };
+  }
+  if (lower.includes('youtube')) {
+    let q = cleanQuery(lower.replace(/youtube/i, ''));
+    if (q && q.length > 2) {
+      return { url: `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`, description: `Searched "${q}" on YouTube in active Chrome browser.` };
+    }
+    return { url: 'https://www.youtube.com', description: 'Opened YouTube in active Chrome browser.' };
+  }
+  if (lower.includes('google')) {
+    let q = cleanQuery(lower.replace(/google/i, ''));
+    if (q && q.length > 2) {
+      return { url: `https://www.google.com/search?q=${encodeURIComponent(q)}`, description: `Searched "${q}" on Google in active Chrome browser.` };
+    }
+    return { url: 'https://www.google.com', description: 'Opened Google in active Chrome browser.' };
   }
 
   // 3. Extract search query if user asked to search or open a specific name/phrase
-  const siteMatch = msg.match(/(?:website|site|web|par|pe)\s+(?:open|kholo|search|dekho)?\s*([a-zA-Z0-9\s.]+)/i) ||
-                    msg.match(/(?:open|kholo|search)\s+(?:website|site)?\s*([a-zA-Z0-9\s.]+)/i);
-  
-  if (siteMatch && siteMatch[1]) {
-    const rawName = cleanQuery(siteMatch[1]);
-    if (rawName && rawName.length > 2 && rawName !== 'browser' && rawName !== 'google') {
-      if (rawName.includes('.')) {
-        const fullUrl = 'https://' + rawName.replace(/\s+/g, '');
-        return { url: fullUrl, description: `Opened website "${fullUrl}" in active Chrome browser.` };
-      }
-      const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(rawName)}`;
-      return { url: searchUrl, description: `Searched "${rawName}" on Google in active Chrome browser.` };
+  if (lower.includes('open') || lower.includes('search') || lower.includes('kholo') || lower.includes('chalao') || lower.includes('dekho')) {
+    const queryCandidate = cleanQuery(lower);
+    if (queryCandidate && queryCandidate.length > 2 && queryCandidate !== 'browser') {
+      const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(queryCandidate)}`;
+      return { url: searchUrl, description: `Searched "${queryCandidate}" on Google in active Chrome browser.` };
     }
   }
 
@@ -146,24 +154,6 @@ function handleInternalBrowserAutomation(msg: string): { executed: boolean; desc
   if (customSite.url) {
     openUrl = customSite.url;
     description = customSite.description;
-  } else if (lower.includes('youtube')) {
-    let query = cleanQuery(lower.replace(/youtube/i, ''));
-    if (query && query.length > 2) {
-      openUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
-      description = `Searched "${query}" on YouTube in active Chrome browser.`;
-    } else {
-      openUrl = `https://www.youtube.com`;
-      description = `Opened YouTube in active Chrome browser.`;
-    }
-  } else if (lower.includes('google')) {
-    let query = cleanQuery(lower.replace(/google/i, ''));
-    if (query && query.length > 2) {
-      openUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
-      description = `Searched "${query}" on Google in active Chrome browser.`;
-    } else {
-      openUrl = `https://www.google.com`;
-      description = `Opened Google in active Chrome browser.`;
-    }
   } else if (lower.includes('chatgpt')) {
     openUrl = `https://chatgpt.com`;
     description = `Opened ChatGPT in active Chrome browser.`;
@@ -176,14 +166,15 @@ function handleInternalBrowserAutomation(msg: string): { executed: boolean; desc
   } else if (lower.includes('linkedin')) {
     openUrl = `https://www.linkedin.com`;
     description = `Opened LinkedIn in active Chrome browser.`;
-  } else if (lower.includes('browser') || lower.includes('kholo') || lower.includes('launch')) {
+  } else if (lower.includes('browser') || lower.includes('kholo') || lower.includes('launch') || lower.includes('open')) {
     openUrl = `https://www.google.com`;
     description = `Opened Chrome Browser tab.`;
   }
 
   if (openUrl) {
     try {
-      exec(`start chrome "${openUrl}"`, (err) => {
+      const psCmd = `powershell -ExecutionPolicy Bypass -Command "Start-Process 'chrome.exe' '${openUrl}'"`;
+      exec(psCmd, (err) => {
         if (err) console.warn("[Zodark Browser Exec Notice]:", err.message);
       });
     } catch (e) {

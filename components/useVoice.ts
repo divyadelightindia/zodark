@@ -72,6 +72,55 @@ if (typeof window !== 'undefined') {
   window.addEventListener('touchstart', unlockAudio, { capture: true, once: true });
 }
 
+/**
+ * Converts Devnagari Hindi text to Roman Script Hinglish
+ */
+export function devnagariToHinglish(text: string): string {
+  if (!text) return text;
+
+  const dict: Record<string, string> = {
+    'भाई': 'bhai', 'ब्राउज़र': 'browser', 'ब्राउजर': 'browser', 'ब्राउज़र': 'browser',
+    'ओपन': 'open', 'कीजिए': 'kije', 'किजिए': 'kije', 'करो': 'karo', 'करें': 'karein',
+    'पहले': 'pehle', 'नहीं': 'nahi', 'हुआ': 'hua', 'अभी': 'abhi', 'आपको': 'aapko',
+    'फिर': 'firse', 'से': 'se', 'गूगल': 'google', 'यूट्यूब': 'youtube', 'फेसबुक': 'facebook',
+    'इंस्टाग्राम': 'instagram', 'चैटजीपीटी': 'chatgpt', 'सर्च': 'search', 'क्या': 'kya',
+    'बताओ': 'batao', 'देख': 'dekh', 'स्क्रीन': 'screen', 'पर': 'par', 'ऊपर': 'upar',
+    'कौन': 'kaun', 'सा': 'sa', 'वीडियो': 'video', 'क्लिप': 'clip', 'चल': 'chal',
+    'रहा': 'raha', 'है': 'hai', 'हैं': 'hain', 'पूछ': 'poochh', 'पूछो': 'poochho',
+    'आप': 'aap', 'दिख': 'dikh', 'खोलो': 'kholo', 'चालू': 'chalu', 'नमस्ते': 'namaste',
+    'सर': 'sir', 'जवाब': 'jawab', 'दो': 'do', 'कहो': 'kaho', 'सुनो': 'suno'
+  };
+
+  let wordResult = text;
+  for (const [dev, eng] of Object.entries(dict)) {
+    const reg = new RegExp(dev, 'g');
+    wordResult = wordResult.replace(reg, eng);
+  }
+
+  const devToRom: Record<string, string> = {
+    'अ': 'a', 'आ': 'aa', 'इ': 'i', 'ई': 'ee', 'उ': 'u', 'ऊ': 'oo', 'ऋ': 'ri', 'ए': 'e', 'ऐ': 'ai', 'ओ': 'o', 'औ': 'au',
+    'क': 'k', 'خ': 'kh', 'ग': 'g', 'घ': 'gh', 'ङ': 'n',
+    'च': 'ch', 'छ': 'chh', 'ज': 'j', 'झ': 'jh', 'ञ': 'n',
+    'ट': 't', 'ठ': 'th', 'ड': 'd', 'ढ': 'dh', 'ण': 'n',
+    'त': 't', 'थ': 'th', 'द': 'd', 'ध': 'dh', 'न': 'n',
+    'प': 'p', 'फ': 'f', 'ब': 'b', 'भ': 'bh', 'म': 'm',
+    'य': 'y', 'र': 'r', 'ल': 'l', 'व': 'v', 'श': 'sh', 'ष': 'sh', 'स': 's', 'ह': 'h',
+    'ा': 'a', 'ि': 'i', 'ी': 'ee', 'ु': 'u', 'ू': 'oo', 'ृ': 'ri', 'े': 'e', 'ै': 'ai', 'ो': 'o', 'ौ': 'au',
+    'ं': 'n', 'ः': 'h', 'ँ': 'n', '्': '', '़': ''
+  };
+
+  let finalStr = '';
+  for (const char of wordResult) {
+    if (devToRom[char] !== undefined) {
+      finalStr += devToRom[char];
+    } else {
+      finalStr += char;
+    }
+  }
+
+  return finalStr.replace(/\s+/g, ' ').trim();
+}
+
 export function useVoice(options: UseVoiceOptions = {}) {
   const {
     onSpeechComplete,
@@ -167,7 +216,7 @@ export function useVoice(options: UseVoiceOptions = {}) {
       const recognition = new SpeechRecognitionConstructor();
       recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.lang = 'hi-IN'; // Multi-lingual Hinglish & Hindi recognition
+      recognition.lang = 'en-IN'; // Transcribe in Hinglish / Roman script
 
       recognition.onstart = () => {};
 
@@ -247,15 +296,16 @@ export function useVoice(options: UseVoiceOptions = {}) {
 
         if (final) {
           accumulatedTextRef.current += final;
-          setTranscript(accumulatedTextRef.current.trim());
+          setTranscript(devnagariToHinglish(accumulatedTextRef.current.trim()));
         }
-        setInterimTranscript(interim);
+        setInterimTranscript(devnagariToHinglish(interim));
 
         // Silence Timer
         clearSilenceTimer();
         if (currentSpoken) {
           silenceTimerRef.current = setTimeout(() => {
-            const finalQuery = accumulatedTextRef.current.trim() || interim.trim();
+            const rawQuery = accumulatedTextRef.current.trim() || interim.trim();
+            const finalQuery = devnagariToHinglish(rawQuery);
             if (finalQuery && !isSpeakingRef.current) {
               accumulatedTextRef.current = '';
               setInterimTranscript('');

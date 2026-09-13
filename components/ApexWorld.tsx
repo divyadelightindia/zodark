@@ -260,7 +260,6 @@ export function AgentOverview({ sel, onClose, onSelectSkill }: { sel: NodeSel; o
 import { ZodarkChatDrawer } from "@/components/ZodarkChatDrawer";
 import { ZodarkSocialStudio } from "@/components/ZodarkSocialStudio";
 import { ZodarkHermesStudio } from "@/components/ZodarkHermesStudio";
-import { ZodarkLiveBrowser } from "@/components/ZodarkLiveBrowser";
 
 /* ── Chat history type ── */
 type ChatMessage = { role: "user" | "model"; text: string };
@@ -270,9 +269,6 @@ export default function ApexWorld() {
   const [selected, setSelected] = useState<NodeSel | null>(null);
   const [isSocialStudioOpen, setIsSocialStudioOpen] = useState(false);
   const [isHermesStudioOpen, setIsHermesStudioOpen] = useState(false);
-  const [isLiveBrowserOpen, setIsLiveBrowserOpen] = useState(false);
-  const [liveBrowserUrl, setLiveBrowserUrl] = useState("https://www.google.com");
-  const [liveBrowserQuery, setLiveBrowserQuery] = useState("");
   const [reduced, setReduced] = useState(false);
 
   // AI conversation state — drives the orb, backdrop and reasoning web

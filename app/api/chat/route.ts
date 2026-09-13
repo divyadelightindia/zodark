@@ -42,9 +42,20 @@ function normalizeText(text: string): string {
 }
 
 /**
- * Extracts custom domain/website URL (e.g. jordar.in) or search query from user message
+ * Helper to clean search query from filler words
+ */
+function cleanQuery(str: string): string {
+  return str
+    .replace(/by|open|kholo|search|par|pe|karo|chalao|play|website|site|wali|kijiye|karein|do|bhai|sir|aap|thoda|wale|waali/gi, '')
+    .trim();
+}
+
+/**
+ * Extracts custom domain/website URL or search query from user message
  */
 function extractDomainOrQuery(msg: string): { url: string | null; description: string } {
+  const lower = msg.toLowerCase();
+
   // 1. Check for explicit URL or domain name (e.g. jordar.in, google.com, mywebsite.co.in)
   const urlRegex = /(?:https?:\/\/)?([a-zA-Z0-9-]+\.(?:com|in|org|net|co|io|ai|app|gov|edu|dev|me|tech|site|online|xyz)(?:\/[^\s]*)?)/i;
   const match = msg.match(urlRegex);
@@ -57,13 +68,35 @@ function extractDomainOrQuery(msg: string): { url: string | null; description: s
     return { url: domain, description: `Opened website "${domain}" in active Chrome browser.` };
   }
 
-  // 2. Check for "website open", "site open", "search for X"
-  const siteMatch = msg.match(/(?:website|site|web|par)\s+(?:open|kholo|search|dekho)?\s*([a-zA-Z0-9\s.]+)/i) ||
+  // 2. Popular Brand Shortcuts
+  if (lower.includes('amazon')) {
+    const q = cleanQuery(lower.replace(/amazon/i, ''));
+    if (q && q.length > 2) {
+      return { url: `https://www.amazon.in/s?k=${encodeURIComponent(q)}`, description: `Searched "${q}" on Amazon.` };
+    }
+    return { url: 'https://www.amazon.in', description: 'Opened Amazon.' };
+  }
+  if (lower.includes('flipkart')) {
+    const q = cleanQuery(lower.replace(/flipkart/i, ''));
+    if (q && q.length > 2) {
+      return { url: `https://www.flipkart.com/search?q=${encodeURIComponent(q)}`, description: `Searched "${q}" on Flipkart.` };
+    }
+    return { url: 'https://www.flipkart.com', description: 'Opened Flipkart.' };
+  }
+  if (lower.includes('booking')) {
+    return { url: 'https://www.booking.com', description: 'Opened Booking.com.' };
+  }
+  if (lower.includes('makemytrip') || lower.includes('make my trip')) {
+    return { url: 'https://www.makemytrip.com', description: 'Opened MakeMyTrip.' };
+  }
+
+  // 3. Extract search query if user asked to search or open a specific name/phrase
+  const siteMatch = msg.match(/(?:website|site|web|par|pe)\s+(?:open|kholo|search|dekho)?\s*([a-zA-Z0-9\s.]+)/i) ||
                     msg.match(/(?:open|kholo|search)\s+(?:website|site)?\s*([a-zA-Z0-9\s.]+)/i);
   
   if (siteMatch && siteMatch[1]) {
-    const rawName = siteMatch[1].replace(/open|kholo|search|website|site|wali|par|pe|kijiye|karo|bhai/gi, '').trim();
-    if (rawName && rawName.length > 2) {
+    const rawName = cleanQuery(siteMatch[1]);
+    if (rawName && rawName.length > 2 && rawName !== 'browser' && rawName !== 'google') {
       if (rawName.includes('.')) {
         const fullUrl = 'https://' + rawName.replace(/\s+/g, '');
         return { url: fullUrl, description: `Opened website "${fullUrl}" in active Chrome browser.` };
@@ -100,25 +133,22 @@ function handleInternalBrowserAutomation(msg: string): { executed: boolean; desc
     if (typeMatch && typeMatch[1]) {
       const textToType = typeMatch[1].trim();
       typeTextOS(textToType);
+      pressKeyOS('{ENTER}');
       return {
         executed: true,
-        description: `Typed "${textToType}" into focused input box on active screen.`
+        description: `Typed "${textToType}" and pressed Enter on active screen.`
       };
     }
   }
 
-  // Check for custom domain / website request FIRST (e.g. jordar.in, amazon.in)
+  // Check for custom domain, brand, or search query FIRST!
   const customSite = extractDomainOrQuery(msg);
   if (customSite.url) {
     openUrl = customSite.url;
     description = customSite.description;
   } else if (lower.includes('youtube')) {
-    let query = '';
-    const searchMatch = lower.match(/(?:search|play|find|par|pe|sunao|chalao)\s+(.+)/i);
-    if (searchMatch && searchMatch[1]) {
-      query = searchMatch[1].replace(/youtube|open|kholo|search|par|pe|karo|chalao|play/gi, '').trim();
-    }
-    if (query) {
+    let query = cleanQuery(lower.replace(/youtube/i, ''));
+    if (query && query.length > 2) {
       openUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
       description = `Searched "${query}" on YouTube in active Chrome browser.`;
     } else {
@@ -126,12 +156,8 @@ function handleInternalBrowserAutomation(msg: string): { executed: boolean; desc
       description = `Opened YouTube in active Chrome browser.`;
     }
   } else if (lower.includes('google')) {
-    let query = '';
-    const searchMatch = lower.match(/(?:search|find|par|pe|do|poochho)\s+(.+)/i);
-    if (searchMatch && searchMatch[1]) {
-      query = searchMatch[1].replace(/google|open|kholo|search|par|pe|karo/gi, '').trim();
-    }
-    if (query) {
+    let query = cleanQuery(lower.replace(/google/i, ''));
+    if (query && query.length > 2) {
       openUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
       description = `Searched "${query}" on Google in active Chrome browser.`;
     } else {
@@ -150,7 +176,7 @@ function handleInternalBrowserAutomation(msg: string): { executed: boolean; desc
   } else if (lower.includes('linkedin')) {
     openUrl = `https://www.linkedin.com`;
     description = `Opened LinkedIn in active Chrome browser.`;
-  } else if (lower.includes('browser') || lower.includes('open') || lower.includes('kholo') || lower.includes('launch') || lower.includes('nahi hua') || lower.includes('firse')) {
+  } else if (lower.includes('browser') || lower.includes('kholo') || lower.includes('launch')) {
     openUrl = `https://www.google.com`;
     description = `Opened Chrome Browser tab.`;
   }

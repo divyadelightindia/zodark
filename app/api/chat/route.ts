@@ -42,6 +42,41 @@ function normalizeText(text: string): string {
 }
 
 /**
+ * Extracts custom domain/website URL (e.g. jordar.in) or search query from user message
+ */
+function extractDomainOrQuery(msg: string): { url: string | null; description: string } {
+  // 1. Check for explicit URL or domain name (e.g. jordar.in, google.com, mywebsite.co.in)
+  const urlRegex = /(?:https?:\/\/)?([a-zA-Z0-9-]+\.(?:com|in|org|net|co|io|ai|app|gov|edu|dev|me|tech|site|online|xyz)(?:\/[^\s]*)?)/i;
+  const match = msg.match(urlRegex);
+  
+  if (match && match[1]) {
+    let domain = match[1].trim();
+    if (!domain.startsWith('http://') && !domain.startsWith('https://')) {
+      domain = 'https://' + domain;
+    }
+    return { url: domain, description: `Opened website "${domain}" in active Chrome browser.` };
+  }
+
+  // 2. Check for "website open", "site open", "search for X"
+  const siteMatch = msg.match(/(?:website|site|web|par)\s+(?:open|kholo|search|dekho)?\s*([a-zA-Z0-9\s.]+)/i) ||
+                    msg.match(/(?:open|kholo|search)\s+(?:website|site)?\s*([a-zA-Z0-9\s.]+)/i);
+  
+  if (siteMatch && siteMatch[1]) {
+    const rawName = siteMatch[1].replace(/open|kholo|search|website|site|wali|par|pe|kijiye|karo|bhai/gi, '').trim();
+    if (rawName && rawName.length > 2) {
+      if (rawName.includes('.')) {
+        const fullUrl = 'https://' + rawName.replace(/\s+/g, '');
+        return { url: fullUrl, description: `Opened website "${fullUrl}" in active Chrome browser.` };
+      }
+      const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(rawName)}`;
+      return { url: searchUrl, description: `Searched "${rawName}" on Google in active Chrome browser.` };
+    }
+  }
+
+  return { url: null, description: '' };
+}
+
+/**
  * Handles Zodark Human Operator PC Browser & OS Automation
  */
 function handleInternalBrowserAutomation(msg: string): { executed: boolean; description: string; openUrl?: string } {
@@ -72,7 +107,12 @@ function handleInternalBrowserAutomation(msg: string): { executed: boolean; desc
     }
   }
 
-  if (lower.includes('youtube')) {
+  // Check for custom domain / website request FIRST (e.g. jordar.in, amazon.in)
+  const customSite = extractDomainOrQuery(msg);
+  if (customSite.url) {
+    openUrl = customSite.url;
+    description = customSite.description;
+  } else if (lower.includes('youtube')) {
     let query = '';
     const searchMatch = lower.match(/(?:search|play|find|par|pe|sunao|chalao)\s+(.+)/i);
     if (searchMatch && searchMatch[1]) {

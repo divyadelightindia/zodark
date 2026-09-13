@@ -224,12 +224,8 @@ export async function POST(req: Request) {
     // Process Internal Zodark Browser & OS Automation
     const actionResult = handleInternalBrowserAutomation(message);
 
-    // Check if Vision is requested or needed
-    const needsVision = isVisionIntent(message);
-    let screenshotBase64: string | null = clientScreenshot || null;
-    if (!screenshotBase64 && needsVision) {
-      screenshotBase64 = captureScreenBase64();
-    }
+    // ALWAYS capture real-time PC desktop screenshot for Zodark's Active Vision ("Zodark Ki Aankhein")
+    let screenshotBase64: string | null = clientScreenshot || captureScreenBase64();
 
     const totalMemGB = (os.totalmem() / (1024 * 1024 * 1024)).toFixed(1);
     const freeMemGB = (os.freemem() / (1024 * 1024 * 1024)).toFixed(1);
@@ -237,7 +233,7 @@ export async function POST(req: Request) {
 - OS Platform: Windows (${os.release()}, ${os.arch()})
 - Host Name: ${os.hostname()}
 - Memory: Total ${totalMemGB} GB, Free ${freeMemGB} GB
-- Real-Time Desktop Vision ("Zodark Ki Aankhein"): ${screenshotBase64 ? 'ACTIVE CAPTURED' : (needsVision ? 'ATTEMPTED' : 'READY')}
+- Real-Time Desktop Vision ("Zodark Ki Aankhein"): ${screenshotBase64 ? 'ACTIVE CAPTURED (LIVE PC SCREENSHOT ATTACHED)' : 'ATTEMPTED'}
 ${actionResult.executed ? `- PC AUTOMATION EXECUTED: ${actionResult.description}` : ''}`;
 
     let dynamicInstruction = SYSTEM_INSTRUCTION + systemContext;
@@ -279,7 +275,7 @@ ${actionResult.executed ? `- PC AUTOMATION EXECUTED: ${actionResult.description}
       finalPromptText += `\n\n[ZODARK OPERATOR ENGINE NOTE]: Action "${actionResult.description}" HAS BEEN EXECUTED DIRECTLY ON THE USER'S PC SCREEN! Warmly inform the user in Hinglish what was done.`;
     }
     if (screenshotBase64) {
-      finalPromptText += `\n\n[ZODARK VISION ENGINE NOTE]: The attached PNG image is a REAL-TIME SCREENSHOT of the user's active screen taken RIGHT NOW! Analyze what video, text, or webpage is visible on screen and answer the user's question with 100% precision.`;
+      finalPromptText += `\n\n[ZODARK VISION ENGINE NOTE]: The attached PNG image is a REAL-TIME SCREENSHOT of the user's active PC screen taken RIGHT NOW! Analyze what window, video, search bar, or webpage is visible on screen, inspect where the focus is, and answer the user's question with 100% precision in Roman Script Hinglish.`;
     }
 
     userParts.push({ text: finalPromptText });

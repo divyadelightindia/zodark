@@ -383,35 +383,11 @@ export default function ApexWorld() {
 
       let finalMsg = cleanMsg;
 
-      // Integrated Zodark Live Browser Launch Trigger
-      if (lower.includes("browser") || lower.includes("youtube") || lower.includes("google") || lower.includes("chatgpt") || lower.includes("instagram") || lower.includes("facebook") || lower.includes("search")) {
-        if (lower.includes("youtube")) {
-          setLiveBrowserUrl("https://www.youtube.com");
-          const qMatch = lower.match(/(?:search|play|find|par|pe|sunao)\s+(.+)/i);
-          if (qMatch && qMatch[1]) {
-            setLiveBrowserQuery(qMatch[1].replace(/youtube|open|kholo|search|par|pe/gi, '').trim());
-          } else {
-            setLiveBrowserQuery("");
-          }
-        } else if (lower.includes("chatgpt")) {
-          setLiveBrowserUrl("https://chatgpt.com");
-          setLiveBrowserQuery("");
-        } else if (lower.includes("instagram")) {
-          setLiveBrowserUrl("https://www.instagram.com");
-          setLiveBrowserQuery("");
-        } else if (lower.includes("facebook")) {
-          setLiveBrowserUrl("https://www.facebook.com");
-          setLiveBrowserQuery("");
-        } else {
-          const qMatch = lower.match(/(?:search|find|kholo|open|par|pe)\s+(.+)/i);
-          if (qMatch && qMatch[1]) {
-            setLiveBrowserQuery(qMatch[1].replace(/google|browser|open|kholo|search/gi, '').trim());
-          } else {
-            setLiveBrowserQuery("");
-          }
-          setLiveBrowserUrl("https://www.google.com");
-        }
-        setIsLiveBrowserOpen(true);
+      // Zodark Digital Marketing, Social Media & Hermes PC Access Agent Trigger
+      if (lower.includes("instagram") || lower.includes("facebook") || lower.includes("social") || lower.includes("marketing") || lower.includes("caption") || lower.includes("post")) {
+        setIsSocialStudioOpen(true);
+      } else if (lower.includes("pc access") || lower.includes("hermes") || lower.includes("automation") || lower.includes("terminal") || lower.includes("system") || lower.includes("file")) {
+        setIsHermesStudioOpen(true);
       }
 
       // Check if request is asking for news / trending topics

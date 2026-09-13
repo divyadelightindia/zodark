@@ -632,14 +632,6 @@ export default function ApexWorld() {
         onClose={() => setIsHermesStudioOpen(false)}
       />
 
-      {/* Integrated Zodark Live Interactive Browser Modal */}
-      <ZodarkLiveBrowser
-        isOpen={isLiveBrowserOpen}
-        initialUrl={liveBrowserUrl}
-        initialQuery={liveBrowserQuery}
-        onClose={() => setIsLiveBrowserOpen(false)}
-      />
-
       {/* Right-Side Slide-out Memory & Links Drawer */}
       <ZodarkChatDrawer
         history={chatHistory}

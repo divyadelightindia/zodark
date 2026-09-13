@@ -1,36 +1,56 @@
 import { NextResponse } from 'next/server';
 import os from 'os';
 import { exec } from 'child_process';
+import { captureScreenBase64, typeTextOS, pressKeyOS } from '@/service/zodark-vision';
 
 export const dynamic = 'force-dynamic';
 
-const SYSTEM_INSTRUCTION = `You are Zodark, an advanced executive AI assistant and human operator agent.
+const SYSTEM_INSTRUCTION = `You are Zodark, an advanced executive AI assistant with REAL-TIME ACTIVE VISION ("Zodark Ki Aankhein") and FULL OS OPERATOR AUTOMATION ("Clicking & Writing Active").
 
-OPERATOR DIRECTIVE:
-1. YOU ARE DIRECTLY CONNECTED TO THE USER'S LOCAL PC CHROME BROWSER.
-2. WHEN THE USER ASKS TO OPEN YOUTUBE, GOOGLE, CHATGPT, INSTAGRAM, FACEBOOK, LINKEDIN, OR SEARCH THE WEB, CONFIRM WARMLY IN HINGLISH THAT YOU HAVE LAUNCHED IT AS A NEW TAB IN THEIR ACTIVE CHROME BROWSER WINDOW (RIGHT NEXT TO LOCALHOST:3000).
-3. EXPLAIN THAT THEIR SAVED LOGINS AND SESSIONS ARE FULLY ACTIVE IN THIS NEW TAB. NEVER MENTION EMBEDDED MODALS OR INCOGNITO.
-4. CONVERSATIONAL VOICE DIALOGUE: You are designed for continuous 2-way voice conversation. Speak naturally, warmly, and politely in clear Hinglish. Address the user respectfully as "Sir" or "Bhai".
-5. TONE & BEHAVIOR: Professional, helpful, confident, and human-like.
-6. CONCISENESS: Keep answers short, direct, and conversational (2 to 3 sentences max).`;
+OPERATOR & VISION DIRECTIVES:
+1. REAL-TIME VISION ("ZODARK KI AANKHEIN"): You have direct real-time vision access to the user's PC screen. When a screenshot is attached to the user message, analyze it with 100% precision and describe the exact video clip, search bar, text, buttons, or webpage currently visible on their screen.
+2. OPERATOR AUTOMATION ("CLICKING & WRITING"): When the user asks to open YouTube, Google, ChatGPT, Instagram, Facebook, LinkedIn, type text, or search the web, confirm warmly in Hinglish that you have launched it or performed the action on their PC.
+3. LOGINS & TABS: All launched sites open in their active Chrome browser right next to localhost:3000 (+ new tab) with their active signed-in accounts.
+4. TONE & VOICE DIALOGUE: Speak naturally, warmly, and politely in clear Hinglish. Address the user respectfully as "Sir" or "Bhai".
+5. CONCISENESS: Keep answers short, direct, and conversational (2 to 3 sentences max).`;
 
 const FAST_MODELS = [
-  'gemini-3.5-flash-lite',
-  'gemini-3.1-flash-lite',
+  'gemini-2.0-flash',
+  'gemini-1.5-flash',
   'gemini-3.5-flash',
-  'gemini-3.6-flash',
-  'gemini-flash-latest',
-  'gemini-2.0-flash'
+  'gemini-flash-latest'
 ];
 
 /**
- * Handles Zodark Human Operator PC Browser Automation
+ * Handles Zodark Human Operator PC Browser & OS Automation
  */
 function handleInternalBrowserAutomation(msg: string): { executed: boolean; description: string; openUrl?: string } {
   const lower = msg.toLowerCase();
 
   let openUrl = '';
   let description = '';
+
+  // Handle Play/Pause
+  if ((lower.includes('play') || lower.includes('pause')) && (lower.includes('video') || lower.includes('song') || lower.includes('chalao') || lower.includes('roko'))) {
+    pressKeyOS(' '); // Spacebar toggles video play/pause on YouTube / browsers
+    return {
+      executed: true,
+      description: 'Toggled video Play/Pause on active screen.'
+    };
+  }
+
+  // Handle Typing / Writing
+  if ((lower.includes('type') || lower.includes('write') || lower.includes('likho')) && !lower.includes('youtube') && !lower.includes('google')) {
+    const typeMatch = lower.match(/(?:type|write|likho)\s+(.+)/i);
+    if (typeMatch && typeMatch[1]) {
+      const textToType = typeMatch[1].trim();
+      typeTextOS(textToType);
+      return {
+        executed: true,
+        description: `Typed "${textToType}" into focused input box on active screen.`
+      };
+    }
+  }
 
   if (lower.includes('youtube')) {
     let query = '';
@@ -70,7 +90,7 @@ function handleInternalBrowserAutomation(msg: string): { executed: boolean; desc
   } else if (lower.includes('linkedin')) {
     openUrl = `https://www.linkedin.com`;
     description = `Opened LinkedIn in active Chrome browser.`;
-  } else if (lower.includes('browser') || lower.includes('kholo') || lower.includes('launch') || lower.includes('open')) {
+  } else if (lower.includes('browser') || lower.includes('kholo') || lower.includes('launch')) {
     openUrl = `https://www.google.com`;
     description = `Opened Chrome Browser tab.`;
   }
@@ -92,6 +112,19 @@ function handleInternalBrowserAutomation(msg: string): { executed: boolean; desc
   }
 
   return { executed: false, description: '' };
+}
+
+/**
+ * Checks if the message requires Zodark's Real-Time Active Screen Vision
+ */
+function isVisionIntent(msg: string): boolean {
+  const lower = msg.toLowerCase();
+  const visionKeywords = [
+    'screen', 'dekh', 'dikhta', 'video', 'clip', 'kya hai', 'padho', 
+    'view', 'screenshot', 'show', 'page', 'chal raha', 'image', 'look', 
+    'dikh', 'batao', 'aankh', 'aankhein', 'puchh', 'poochh'
+  ];
+  return visionKeywords.some(kw => lower.includes(kw));
 }
 
 export async function POST(req: Request) {
@@ -127,16 +160,24 @@ export async function POST(req: Request) {
       );
     }
 
-    // Process Internal Zodark Browser Automation
+    // Process Internal Zodark Browser & OS Automation
     const actionResult = handleInternalBrowserAutomation(message);
+
+    // Check if Vision is requested or needed
+    const needsVision = isVisionIntent(message);
+    let screenshotBase64: string | null = null;
+    if (needsVision) {
+      screenshotBase64 = captureScreenBase64();
+    }
 
     const totalMemGB = (os.totalmem() / (1024 * 1024 * 1024)).toFixed(1);
     const freeMemGB = (os.freemem() / (1024 * 1024 * 1024)).toFixed(1);
-    const systemContext = `\nREAL-TIME ZODARK PC BROWSER OPERATOR STATUS:
+    const systemContext = `\nREAL-TIME ZODARK PC OPERATOR & VISION STATUS:
 - OS Platform: Windows (${os.release()}, ${os.arch()})
 - Host Name: ${os.hostname()}
 - Memory: Total ${totalMemGB} GB, Free ${freeMemGB} GB
-${actionResult.executed ? `- PC CHROME NEW TAB LAUNCHED: ${actionResult.description} (URL: ${actionResult.openUrl})` : ''}`;
+- Real-Time Desktop Vision ("Zodark Ki Aankhein"): ${needsVision ? (screenshotBase64 ? 'ACTIVE CAPTURED' : 'ATTEMPTED') : 'READY'}
+${actionResult.executed ? `- PC AUTOMATION EXECUTED: ${actionResult.description}` : ''}`;
 
     let dynamicInstruction = SYSTEM_INSTRUCTION + systemContext;
     if (businessProfile && businessProfile.businessName) {
@@ -158,14 +199,31 @@ ${actionResult.executed ? `- PC CHROME NEW TAB LAUNCHED: ${actionResult.descript
       }
     }
 
+    let userParts: any[] = [];
+
+    // Attach Base64 screenshot image if Vision is active!
+    if (screenshotBase64) {
+      userParts.push({
+        inlineData: {
+          mimeType: 'image/png',
+          data: screenshotBase64
+        }
+      });
+    }
+
     let finalPromptText = message.trim();
     if (actionResult.executed) {
-      finalPromptText += `\n\n[ZODARK OPERATOR ENGINE NOTE]: The target URL "${actionResult.openUrl}" HAS BEEN LAUNCHED DIRECTLY AS A NEW TAB IN THE USER'S PRIMARY ACTIVE CHROME BROWSER WINDOW (right next to localhost:3000)! Confirm to the user in polite Hinglish that you have opened ${actionResult.openUrl} in a new tab in their active Chrome browser with all their logged-in accounts ready!`;
+      finalPromptText += `\n\n[ZODARK OPERATOR ENGINE NOTE]: Action "${actionResult.description}" HAS BEEN EXECUTED DIRECTLY ON THE USER'S PC SCREEN! Warmly inform the user in Hinglish what was done.`;
     }
+    if (screenshotBase64) {
+      finalPromptText += `\n\n[ZODARK VISION ENGINE NOTE]: The attached PNG image is a REAL-TIME SCREENSHOT of the user's active PC screen taken RIGHT NOW! Analyze what video, text, or webpage is visible on screen and answer the user's question with 100% precision.`;
+    }
+
+    userParts.push({ text: finalPromptText });
 
     contents.push({
       role: 'user',
-      parts: [{ text: finalPromptText }]
+      parts: userParts
     });
 
     const requestBody = {
@@ -173,8 +231,8 @@ ${actionResult.executed ? `- PC CHROME NEW TAB LAUNCHED: ${actionResult.descript
         parts: [{ text: dynamicInstruction }]
       },
       generationConfig: {
-        temperature: 0.8,
-        maxOutputTokens: 180,
+        temperature: 0.7,
+        maxOutputTokens: 250,
       },
       contents: contents
     };
@@ -198,6 +256,7 @@ ${actionResult.executed ? `- PC CHROME NEW TAB LAUNCHED: ${actionResult.descript
         } else {
           const errData = await response.text();
           lastError = `${model} ${response.status}: ${errData}`;
+          console.warn(`[ZODARK CHAT] Model ${model} returned error:`, errData);
         }
       } catch (err) {
         lastError = (err as Error).message;
@@ -221,4 +280,5 @@ ${actionResult.executed ? `- PC CHROME NEW TAB LAUNCHED: ${actionResult.descript
     );
   }
 }
+
 

@@ -386,6 +386,27 @@ export default function ApexWorld() {
         setIsHermesStudioOpen(true);
       }
 
+      // Real PC Local Chrome Launch Triggers
+      if (lower.includes("google") || lower.includes("open google")) {
+        fetch('/api/human-agent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'search_google', url: 'https://www.google.com', query: cleanMsg })
+        }).catch(() => {});
+      } else if (lower.includes("youtube")) {
+        fetch('/api/human-agent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'search_youtube', url: 'https://www.youtube.com', query: cleanMsg })
+        }).catch(() => {});
+      } else if (lower.includes("chatgpt")) {
+        fetch('/api/human-agent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'chatgpt_prompt', url: 'https://chatgpt.com', query: cleanMsg })
+        }).catch(() => {});
+      }
+
       // Check if request is asking for news / trending topics
       const isNewsQuery = lower.includes("news") || lower.includes("khabar") || lower.includes("trending") || lower.includes("headline") || lower.includes("bulletin");
       if (isNewsQuery) {

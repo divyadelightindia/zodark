@@ -3,15 +3,14 @@ import os from 'os';
 
 export const dynamic = 'force-dynamic';
 
-const SYSTEM_INSTRUCTION = `You are Zodark, an advanced executive AI agent and business automation intelligence inspired by top-tier executive systems (like JARVIS).
+const SYSTEM_INSTRUCTION = `You are Zodark, an advanced executive AI assistant and human operator agent.
 
-INTEGRATED LIVE BROWATION DIRECTIVE:
-1. YOU ARE FULLY EQUIPPED WITH AN EMBEDDED INTEGRATED LIVE BROWSER DIRECTLY INSIDE THE ZODARK APP UI.
-2. WHEN THE USER ASKS TO OPEN YOUTUBE, GOOGLE, CHATGAT, INSTAGRAM, FACEBOOK, LINKEDIN, OR SEARCH THE WEB, YOU AUTOMATICALLY OPEN THE EMBEDDED BROWSER MODAL DIRECTLY INSIDE ZODARK.
-3. YOU DO NOT OPEN EXTERNAL BACKGROUND WINDOWS. EVERYTHING OPERATES 100% INSIDE ZODARK'S UI CONTAINER WHERE THE USER CAN LOG IN, BROWSE, AND AUTOMATE SOCIAL MEDIA.
-4. NEVER EVER SAY "I cannot open physical browser windows", "I lack UI control", OR "As an AI assistant I am unable to access your PC". State with full executive confidence that the integrated Zodark Live Browser is open directly on their screen right now!
-5. TONE & BEHAVIOR: Professional, executive, polite, and confident at all times. Address the user respectfully as "Sir".
-6. CONCISENESS: Keep answers short, direct, and actionable (2 to 3 sentences max).`;
+OPERATOR DIRECTIVE:
+1. YOU ARE CONNECTED TO THE USER'S LOCAL PC CHROME BROWSER VIA THE HUMAN OPERATOR AGENT ENGINE.
+2. WHEN THE USER ASKS TO OPEN YOUTUBE, GOOGLE, CHATGPT, INSTAGRAM, FACEBOOK, LINKEDIN, OR SEARCH THE WEB, CONFIRM WARMLY THAT YOU ARE LAUNCHING IT ON THEIR PC CHROME BROWSER.
+3. CONVERSATIONAL VOICE DIALOGUE: You are designed for continuous 2-way voice conversation. Speak naturally, warmly, and politely in clear Hinglish. Address the user respectfully as "Sir" or "Bhai".
+4. TONE & BEHAVIOR: Professional, helpful, confident, and human-like.
+5. CONCISENESS: Keep answers short, direct, and conversational (2 to 3 sentences max).`;
 
 const FAST_MODELS = [
   'gemini-3.5-flash-lite',
@@ -23,7 +22,7 @@ const FAST_MODELS = [
 ];
 
 /**
- * Handles Zodark Integrated Live Browser Automation without launching external popups
+ * Handles Zodark Human Operator PC Browser Automation
  */
 function handleInternalBrowserAutomation(msg: string): { executed: boolean; description: string } {
   const lower = msg.toLowerCase();
@@ -37,50 +36,50 @@ function handleInternalBrowserAutomation(msg: string): { executed: boolean; desc
     return {
       executed: true,
       description: query
-        ? `Opened Zodark Integrated Browser on YouTube with search query "${query}".`
-        : 'Opened YouTube inside Zodark Integrated Live Browser.'
+        ? `Launched YouTube on PC Chrome browser with search query "${query}".`
+        : 'Launched YouTube on PC Chrome browser.'
     };
   }
 
   if (lower.includes('google')) {
     return {
       executed: true,
-      description: 'Opened Google Search inside Zodark Integrated Live Browser.'
+      description: 'Launched Google Search on PC Chrome browser.'
     };
   }
 
   if (lower.includes('chatgpt')) {
     return {
       executed: true,
-      description: 'Opened ChatGPT inside Zodark Integrated Live Browser.'
+      description: 'Launched ChatGPT on PC Chrome browser.'
     };
   }
 
   if (lower.includes('instagram')) {
     return {
       executed: true,
-      description: 'Opened Instagram inside Zodark Integrated Live Browser.'
+      description: 'Launched Instagram on PC Chrome browser.'
     };
   }
 
   if (lower.includes('facebook')) {
     return {
       executed: true,
-      description: 'Opened Facebook inside Zodark Integrated Live Browser.'
+      description: 'Launched Facebook on PC Chrome browser.'
     };
   }
 
   if (lower.includes('linkedin')) {
     return {
       executed: true,
-      description: 'Opened LinkedIn inside Zodark Integrated Live Browser.'
+      description: 'Launched LinkedIn on PC Chrome browser.'
     };
   }
 
   if (lower.includes('browser') || lower.includes('search') || lower.includes('kholo')) {
     return {
       executed: true,
-      description: 'Opened Zodark Integrated Live Browser directly inside Zodark UI.'
+      description: 'Launched PC Chrome Browser.'
     };
   }
 

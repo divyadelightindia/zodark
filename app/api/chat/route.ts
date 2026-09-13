@@ -130,10 +130,11 @@ function isVisionIntent(msg: string): boolean {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { message, history, businessProfile, customApiKey } = body as { 
+    const { message, history, businessProfile, customApiKey, clientScreenshot } = body as { 
       message: string; 
       history: { role: 'user' | 'model'; text: string }[];
       customApiKey?: string;
+      clientScreenshot?: string;
       businessProfile?: {
         businessName?: string;
         websiteUrl?: string;
@@ -165,8 +166,8 @@ export async function POST(req: Request) {
 
     // Check if Vision is requested or needed
     const needsVision = isVisionIntent(message);
-    let screenshotBase64: string | null = null;
-    if (needsVision) {
+    let screenshotBase64: string | null = clientScreenshot || null;
+    if (!screenshotBase64 && needsVision) {
       screenshotBase64 = captureScreenBase64();
     }
 
@@ -176,7 +177,7 @@ export async function POST(req: Request) {
 - OS Platform: Windows (${os.release()}, ${os.arch()})
 - Host Name: ${os.hostname()}
 - Memory: Total ${totalMemGB} GB, Free ${freeMemGB} GB
-- Real-Time Desktop Vision ("Zodark Ki Aankhein"): ${needsVision ? (screenshotBase64 ? 'ACTIVE CAPTURED' : 'ATTEMPTED') : 'READY'}
+- Real-Time Desktop Vision ("Zodark Ki Aankhein"): ${screenshotBase64 ? 'ACTIVE CAPTURED' : (needsVision ? 'ATTEMPTED' : 'READY')}
 ${actionResult.executed ? `- PC AUTOMATION EXECUTED: ${actionResult.description}` : ''}`;
 
     let dynamicInstruction = SYSTEM_INSTRUCTION + systemContext;
@@ -203,10 +204,12 @@ ${actionResult.executed ? `- PC AUTOMATION EXECUTED: ${actionResult.description}
 
     // Attach Base64 screenshot image if Vision is active!
     if (screenshotBase64) {
+      // Remove any data URL prefix if present
+      const cleanB64 = screenshotBase64.replace(/^data:image\/\w+;base64,/, '');
       userParts.push({
         inlineData: {
           mimeType: 'image/png',
-          data: screenshotBase64
+          data: cleanB64
         }
       });
     }
@@ -216,7 +219,7 @@ ${actionResult.executed ? `- PC AUTOMATION EXECUTED: ${actionResult.description}
       finalPromptText += `\n\n[ZODARK OPERATOR ENGINE NOTE]: Action "${actionResult.description}" HAS BEEN EXECUTED DIRECTLY ON THE USER'S PC SCREEN! Warmly inform the user in Hinglish what was done.`;
     }
     if (screenshotBase64) {
-      finalPromptText += `\n\n[ZODARK VISION ENGINE NOTE]: The attached PNG image is a REAL-TIME SCREENSHOT of the user's active PC screen taken RIGHT NOW! Analyze what video, text, or webpage is visible on screen and answer the user's question with 100% precision.`;
+      finalPromptText += `\n\n[ZODARK VISION ENGINE NOTE]: The attached PNG image is a REAL-TIME SCREENSHOT of the user's active screen taken RIGHT NOW! Analyze what video, text, or webpage is visible on screen and answer the user's question with 100% precision.`;
     }
 
     userParts.push({ text: finalPromptText });
@@ -232,7 +235,7 @@ ${actionResult.executed ? `- PC AUTOMATION EXECUTED: ${actionResult.description}
       },
       generationConfig: {
         temperature: 0.7,
-        maxOutputTokens: 250,
+        maxOutputTokens: 600,
       },
       contents: contents
     };

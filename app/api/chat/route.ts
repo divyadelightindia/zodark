@@ -9,7 +9,7 @@ const SYSTEM_INSTRUCTION = `You are Zodark, an advanced executive AI assistant w
 
 OPERATOR & VISION DIRECTIVES:
 1. REAL-TIME VISION ("ZODARK KI AANKHEIN"): You have direct real-time vision access to the user's PC screen. When a screenshot is attached to the user message, analyze it with 100% precision and describe the exact video clip, search bar, text, buttons, or webpage currently visible on their screen.
-2. OPERATOR AUTOMATION ("CLICKING & WRITING"): When the user asks to open YouTube, Google, ChatGPT, Instagram, Facebook, LinkedIn, type text, or search the web, confirm warmly in Hinglish that you have launched it or performed the action on their PC.
+2. OPERATOR AUTOMATION ("CLICKING & WRITING"): When the user asks to open YouTube, Google, ChatGPT, Instagram, Facebook, LinkedIn, type text, or search the web, check [ZODARK OPERATOR ENGINE NOTE] in the prompt. IF an action was executed, confirm it warmly. IF NO ACTION WAS EXECUTED, NEVER CLAIM OR LIE THAT YOU OPENED A BROWSER WINDOW!
 3. LOGINS & TABS: All launched sites open in their active Chrome browser right next to localhost:3000 (+ new tab) with their active signed-in accounts.
 4. TONE & VOICE DIALOGUE: Speak naturally, warmly, and politely in clear Hinglish. Address the user respectfully as "Sir" or "Bhai".
 5. CONCISENESS: Keep answers short, direct, and conversational (2 to 3 sentences max).`;
@@ -22,10 +22,29 @@ const FAST_MODELS = [
 ];
 
 /**
+ * Normalizes Hindi Devnagari and Hinglish transliterations into standard English keywords
+ */
+function normalizeText(text: string): string {
+  let s = text.toLowerCase();
+  s = s.replace(/ब्राउज़र|ब्राउजर|ब्राउज़र|ब्राउसर|ब्रोव्सेर/g, 'browser');
+  s = s.replace(/ओपन|खोलो|खोल|चालू|लॉन्च|स्टार्ट/g, 'open');
+  s = s.replace(/गूगल|गुगल/g, 'google');
+  s = s.replace(/यूट्यूब|युटुब|यूटयूब|युट्युब/g, 'youtube');
+  s = s.replace(/इंस्टाग्राम|इंस्टा/g, 'instagram');
+  s = s.replace(/फेसबुक|एफबी/g, 'facebook');
+  s = s.replace(/चैटजीपीटी|चैट जीपीटी/g, 'chatgpt');
+  s = s.replace(/सर्च|ढूंढो|खोजो|ढूंढ/g, 'search');
+  s = s.replace(/चलाओ|प्ले|सुनाओ/g, 'play');
+  s = s.replace(/रोको|पॉज/g, 'pause');
+  s = s.replace(/टाइप|लिखो|लिखे|लिख/g, 'type');
+  return s;
+}
+
+/**
  * Handles Zodark Human Operator PC Browser & OS Automation
  */
 function handleInternalBrowserAutomation(msg: string): { executed: boolean; description: string; openUrl?: string } {
-  const lower = msg.toLowerCase();
+  const lower = normalizeText(msg);
 
   let openUrl = '';
   let description = '';
@@ -90,7 +109,7 @@ function handleInternalBrowserAutomation(msg: string): { executed: boolean; desc
   } else if (lower.includes('linkedin')) {
     openUrl = `https://www.linkedin.com`;
     description = `Opened LinkedIn in active Chrome browser.`;
-  } else if (lower.includes('browser') || lower.includes('kholo') || lower.includes('launch')) {
+  } else if (lower.includes('browser') || lower.includes('open') || lower.includes('kholo') || lower.includes('launch') || lower.includes('nahi hua') || lower.includes('firse')) {
     openUrl = `https://www.google.com`;
     description = `Opened Chrome Browser tab.`;
   }
